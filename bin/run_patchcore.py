@@ -45,7 +45,7 @@ def run(
     methods = {key: item for (key, item) in methods}
 
     run_save_path = patchcore.utils.create_storage_folder(
-        results_path, log_project, log_group, mode="iterate"
+        results_path, log_project, log_group, mode="overwrite"
     )
 
     list_of_dataloaders = methods["get_dataloaders"](seed)
