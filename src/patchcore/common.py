@@ -187,7 +187,7 @@ class RescaleSegmentor:
     def __init__(self, device, target_size=224):
         self.device = device
         self.target_size = target_size
-        self.smoothing = 4
+        self.smoothing = 1
 
     def convert_to_segmentation(self, patch_scores):
 
