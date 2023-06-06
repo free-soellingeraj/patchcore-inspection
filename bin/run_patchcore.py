@@ -174,15 +174,20 @@ def run(
                 )
 
             LOGGER.info("Computing evaluation metrics.")
+            result = {
+                    "dataset_name": dataset_name,
+            }
             auroc = patchcore.metrics.compute_imagewise_retrieval_metrics(
                 scores, anomaly_labels
             )["auroc"]
+            result['instance_auroc'] = auroc
 
             # Compute PRO score & PW Auroc for all images
             pixel_scores = patchcore.metrics.compute_pixelwise_retrieval_metrics(
                 segmentations, masks_gt
             )
-            full_pixel_auroc = pixel_scores["auroc"]
+            # full_pixel_auroc = pixel_scores["auroc"]
+            result = {**result, **{'full_pixel_'+k: v for k,v in pixel_scores.items()}}    
 
             # Compute PRO score & PW Auroc only images with anomalies
             sel_idxs = []
@@ -193,20 +198,14 @@ def run(
                 [segmentations[i] for i in sel_idxs],
                 [masks_gt[i] for i in sel_idxs],
             )
-            anomaly_pixel_auroc = pixel_scores["auroc"]
+            result = {**result, **{'anomaly_'+k: v for k,v in pixel_scores.items()}}
+            # anomaly_pixel_auroc = pixel_scores["auroc"]
 
-            result_collect.append(
-                {
-                    "dataset_name": dataset_name,
-                    "instance_auroc": auroc,
-                    "full_pixel_auroc": full_pixel_auroc,
-                    "anomaly_pixel_auroc": anomaly_pixel_auroc,
-                }
-            )
+            result_collect.append(result)
 
             for key, item in result_collect[-1].items():
                 if key != "dataset_name":
-                    LOGGER.info("{0}: {1:3.3f}".format(key, item))
+                    LOGGER.info("{}: {}".format(key, item))
 
             # (Optional) Store PatchCore model for later re-use.
             # SAVE all patchcores only if mean_threshold is passed?
