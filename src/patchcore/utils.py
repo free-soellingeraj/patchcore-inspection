@@ -11,6 +11,17 @@ import tqdm
 
 LOGGER = logging.getLogger(__name__)
 
+def create_heatmap(matrix):
+    # Ensure input is a numpy array
+    matrix = np.array(matrix)
+
+    # Get the colormap from matplotlib
+    cmap = plt.get_cmap('cool')
+
+    # Apply the colormap to the matrix and remove the alpha channel
+    rgb_image = cmap(matrix)[:,:,:3]
+
+    return rgb_image
 
 def plot_segmentation_images(
     savefolder,
@@ -64,11 +75,12 @@ def plot_segmentation_images(
         savename = image_path.split("/")
         savename = "_".join(savename[-save_depth:])
         savename = os.path.join(savefolder, savename)
-        f, axes = plt.subplots(1, 2 + int(masks_provided))
+        f, axes = plt.subplots(1, 3 + int(masks_provided))
         axes[0].imshow(image.transpose(1, 2, 0))
         axes[1].imshow(mask.transpose(1, 2, 0))
-        axes[2].imshow(segmentation)
-        f.set_size_inches(3 * (2 + int(masks_provided)), 3)
+        axes[2].imshow(create_heatmap(matrix=segmentation))
+        axes[3].imshow((segmentation > 0.48).astype(int) * 255)
+        f.set_size_inches(3 * (3 + int(masks_provided)), 3)
         f.tight_layout()
         f.savefig(savename)
         plt.close()
