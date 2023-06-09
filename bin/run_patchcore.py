@@ -5,6 +5,7 @@ import sys
 
 import click
 import numpy as np
+import pandas as pd
 import torch
 
 import patchcore.backbones
@@ -431,4 +432,7 @@ def dataset(
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     LOGGER.info("Command line arguments: {}".format(" ".join(sys.argv)))
+    inputs_path_dir = sys.argv[sys.argv.index('--log_project') + 1]
+    inputs_path = os.path.join(inputs_path_dir, 'patchcore-results/args.csv')
+    pd.DataFrame([[arg] for arg in sys.argv]).to_csv(inputs_path, index=False, header=False)
     main()
