@@ -5,6 +5,7 @@ import random
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import PIL
 import torch
 import tqdm
@@ -160,11 +161,14 @@ def compute_and_store_final_results(
     if row_names is not None:
         assert len(row_names) == len(results), "#Rownames != #Result-rows."
 
+    display_mean_metrics = []
     mean_metrics = {}
     for i, result_key in enumerate(column_names):
         mean_metrics[result_key] = np.mean([x[i] for x in results])
+        display_mean_metrics.append({'metric_name': result_key, 'value': mean_metrics[result_key]})
         LOGGER.info("{0}: {1:3.3f}".format(result_key, mean_metrics[result_key]))
 
+    pd.DataFrame(display_mean_metrics).to_csv(os.path.join(results_path, "results_view.csv"))
     savename = os.path.join(results_path, "results.csv")
     with open(savename, "w") as csv_file:
         csv_writer = csv.writer(csv_file, delimiter=",")
