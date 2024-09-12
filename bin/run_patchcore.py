@@ -5,6 +5,7 @@ import sys
 
 import click
 import numpy as np
+import pandas as pd
 import torch
 
 import patchcore.backbones
@@ -45,7 +46,7 @@ def run(
     methods = {key: item for (key, item) in methods}
 
     run_save_path = patchcore.utils.create_storage_folder(
-        results_path, log_project, log_group, mode="iterate"
+        results_path, log_project, log_group, mode="overwrite"
     )
 
     list_of_dataloaders = methods["get_dataloaders"](seed)
@@ -174,15 +175,20 @@ def run(
                 )
 
             LOGGER.info("Computing evaluation metrics.")
+            result = {
+                    "dataset_name": dataset_name,
+            }
             auroc = patchcore.metrics.compute_imagewise_retrieval_metrics(
                 scores, anomaly_labels
             )["auroc"]
+            result['instance_auroc'] = auroc
 
             # Compute PRO score & PW Auroc for all images
             pixel_scores = patchcore.metrics.compute_pixelwise_retrieval_metrics(
                 segmentations, masks_gt
             )
-            full_pixel_auroc = pixel_scores["auroc"]
+            # full_pixel_auroc = pixel_scores["auroc"]
+            result = {**result, **{'full_pixel_'+k: v for k,v in pixel_scores.items()}}    
 
             # Compute PRO score & PW Auroc only images with anomalies
             sel_idxs = []
@@ -193,20 +199,14 @@ def run(
                 [segmentations[i] for i in sel_idxs],
                 [masks_gt[i] for i in sel_idxs],
             )
-            anomaly_pixel_auroc = pixel_scores["auroc"]
+            result = {**result, **{'anomaly_'+k: v for k,v in pixel_scores.items()}}
+            # anomaly_pixel_auroc = pixel_scores["auroc"]
 
-            result_collect.append(
-                {
-                    "dataset_name": dataset_name,
-                    "instance_auroc": auroc,
-                    "full_pixel_auroc": full_pixel_auroc,
-                    "anomaly_pixel_auroc": anomaly_pixel_auroc,
-                }
-            )
+            result_collect.append(result)
 
             for key, item in result_collect[-1].items():
                 if key != "dataset_name":
-                    LOGGER.info("{0}: {1:3.3f}".format(key, item))
+                    LOGGER.info("{}: {}".format(key, item))
 
             # (Optional) Store PatchCore model for later re-use.
             # SAVE all patchcores only if mean_threshold is passed?
@@ -432,4 +432,7 @@ def dataset(
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     LOGGER.info("Command line arguments: {}".format(" ".join(sys.argv)))
+    inputs_path_dir = sys.argv[sys.argv.index('--log_project') + 1]
+    inputs_path = os.path.join(inputs_path_dir, 'patchcore-results/args.csv')
+    pd.DataFrame([[arg] for arg in sys.argv]).to_csv(inputs_path, index=False, header=False)
     main()

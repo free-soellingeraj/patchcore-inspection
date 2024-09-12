@@ -64,6 +64,8 @@ class MVTecDataset(torch.utils.data.Dataset):
                    mvtec.DatasetSplit.TEST will also load mask data.
         """
         super().__init__()
+        self.transform_std = IMAGENET_STD
+        self.transform_mean = IMAGENET_MEAN
         self.source = source
         self.split = split
         self.classnames_to_use = [classname] if classname is not None else _CLASSNAMES
@@ -126,6 +128,7 @@ class MVTecDataset(torch.utils.data.Dataset):
 
             for anomaly in anomaly_types:
                 anomaly_path = os.path.join(classpath, anomaly)
+                if os.path.isfile(anomaly_path): continue
                 anomaly_files = sorted(os.listdir(anomaly_path))
                 imgpaths_per_class[classname][anomaly] = [
                     os.path.join(anomaly_path, x) for x in anomaly_files
